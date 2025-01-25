@@ -4,13 +4,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.runtime.remember
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.create
+import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.ui.nav.models.MainNav
+import ru.driving.school.ui.nav.models.QuestionDetailsNav
+import ru.driving.school.ui.nav.models.QuestionsNav
+import ru.driving.school.ui.nav.models.ThemeDetailsNav
+import ru.driving.school.ui.nav.models.ThemesNav
+import ru.driving.school.ui.nav.models.TicketsNav
+import ru.driving.school.ui.screens.MainScreen
+import ru.driving.school.ui.screens.QuestionDetailsScreen
+import ru.driving.school.ui.screens.QuestionsScreen
+import ru.driving.school.ui.screens.ThemeDetailsScreen
+import ru.driving.school.ui.screens.ThemesScreen
+import ru.driving.school.ui.screens.TicketsScreen
 import ru.driving.school.ui.theme.DrivingschoolandroidTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,30 +32,64 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val navController = rememberNavController()
+            val networkApi = remember {
+                Retrofit.Builder()
+                    .baseUrl("https://spotdiff.ru/driving-school-api/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build()
+                    .create<NetworkApi>()
+            }
+
             DrivingschoolandroidTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                NavHost(
+                    navController = navController,
+                    startDestination = MainNav
+                ) {
+                    composable<TicketsNav> {
+                        TicketsScreen(
+                            networkApi = networkApi,
+                            navController = navController
+                        )
+                    }
+
+                    composable<QuestionsNav> {
+                        QuestionsScreen(
+                            networkApi = networkApi,
+                            navController = navController
+                        )
+                    }
+
+                    composable<ThemesNav> {
+                        ThemesScreen(
+                            networkApi = networkApi,
+                            navController = navController
+                        )
+                    }
+
+                    composable<MainNav> {
+                        MainScreen(
+                            navController = navController
+                        )
+                    }
+
+                    composable<ThemeDetailsNav> {
+                        ThemeDetailsScreen(
+                            networkApi = networkApi,
+                            navController = navController,
+                            id = it.toRoute<ThemeDetailsNav>().id
+                        )
+                    }
+
+                    composable<QuestionDetailsNav> {
+                        QuestionDetailsScreen(
+                            networkApi = networkApi,
+                            navController = navController,
+                            id = it.toRoute<QuestionDetailsNav>().id
+                        )
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    DrivingschoolandroidTheme {
-        Greeting("Android")
     }
 }
