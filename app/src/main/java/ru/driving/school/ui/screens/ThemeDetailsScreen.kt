@@ -43,6 +43,7 @@ import ru.driving.school.data.network.models.ThemeState
 import ru.driving.school.data.network.models.TicketDto
 import ru.driving.school.data.network.models.TicketState
 import ru.driving.school.ui.nav.models.QuestionDetailsNav
+import ru.driving.school.ui.nav.models.TicketDetailsNav
 
 @Composable
 fun ThemeDetailsScreen(
@@ -191,7 +192,7 @@ fun ThemeDetailsScreen(
                             modifier = Modifier.padding(horizontal = 15.dp, vertical = 5.dp)
                         ) {
                             TicketCard(ticket = ticket, state = TicketState.entries.random()) {
-                                navController.navigate("ticketDetails/${ticket.id}")
+                                navController.navigate(TicketDetailsNav(id = id))
                             }
                         }
                     }

@@ -22,6 +22,13 @@ data class TicketDto(
     val name: String
 )
 
+data class TicketDetailDto(
+    val id: Int,
+    val name: String,
+    val theme: ThemeDto,
+    val questions: List<QuestionDetailsDto>
+)
+
 data class ThemeDto(
     val id: Int,
     val name: String,
@@ -45,4 +52,8 @@ data class QuestionDetailsDto(
     val id: Int,
     val text: String,
     val answers: List<AnswerDto>
+)
+
+data class User(
+    val email: String
 )

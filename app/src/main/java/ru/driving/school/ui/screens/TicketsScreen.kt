@@ -44,6 +44,7 @@ import androidx.navigation.NavController
 import ru.driving.school.data.network.NetworkApi
 import ru.driving.school.data.network.models.TicketDto
 import ru.driving.school.data.network.models.TicketState
+import ru.driving.school.ui.nav.models.TicketDetailsNav
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,7 +103,7 @@ fun TicketList(tickets: List<TicketDto>, navController: NavController) {
     ) {
         items(tickets) { ticket ->
             TicketCard(ticket = ticket, state = TicketState.entries.random()) {
-                navController.navigate("ticketDetails/${ticket.id}")
+                navController.navigate(TicketDetailsNav(id = ticket.id))
             }
         }
     }

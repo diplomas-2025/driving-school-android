@@ -5,12 +5,16 @@ import retrofit2.http.Path
 import ru.driving.school.data.network.models.QuestionDetailsDto
 import ru.driving.school.data.network.models.QuestionDto
 import ru.driving.school.data.network.models.ThemeDto
+import ru.driving.school.data.network.models.TicketDetailDto
 import ru.driving.school.data.network.models.TicketDto
 
 interface NetworkApi {
 
     @GET("tickets")
     suspend fun getTickets(): List<TicketDto>
+
+    @GET("tickets/{id}")
+    suspend fun getTicketById(@Path("id") id: Int): TicketDetailDto
 
     @GET("themes")
     suspend fun getThemes(): List<ThemeDto>

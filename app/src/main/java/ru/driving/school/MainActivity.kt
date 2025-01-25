@@ -13,17 +13,23 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.ui.nav.models.LoginNav
 import ru.driving.school.ui.nav.models.MainNav
 import ru.driving.school.ui.nav.models.QuestionDetailsNav
 import ru.driving.school.ui.nav.models.QuestionsNav
+import ru.driving.school.ui.nav.models.SignUpNav
 import ru.driving.school.ui.nav.models.ThemeDetailsNav
 import ru.driving.school.ui.nav.models.ThemesNav
+import ru.driving.school.ui.nav.models.TicketDetailsNav
 import ru.driving.school.ui.nav.models.TicketsNav
+import ru.driving.school.ui.screens.LoginScreen
 import ru.driving.school.ui.screens.MainScreen
 import ru.driving.school.ui.screens.QuestionDetailsScreen
 import ru.driving.school.ui.screens.QuestionsScreen
+import ru.driving.school.ui.screens.SignUpScreen
 import ru.driving.school.ui.screens.ThemeDetailsScreen
 import ru.driving.school.ui.screens.ThemesScreen
+import ru.driving.school.ui.screens.TicketDetailsScreen
 import ru.driving.school.ui.screens.TicketsScreen
 import ru.driving.school.ui.theme.DrivingschoolandroidTheme
 
@@ -46,6 +52,18 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = MainNav
                 ) {
+                    composable<SignUpNav> {
+                        SignUpScreen(
+                            navController = navController
+                        )
+                    }
+
+                    composable<LoginNav> {
+                        LoginScreen(
+                            navController = navController
+                        )
+                    }
+
                     composable<TicketsNav> {
                         TicketsScreen(
                             networkApi = networkApi,
@@ -69,6 +87,7 @@ class MainActivity : ComponentActivity() {
 
                     composable<MainNav> {
                         MainScreen(
+                            networkApi = networkApi,
                             navController = navController
                         )
                     }
@@ -86,6 +105,14 @@ class MainActivity : ComponentActivity() {
                             networkApi = networkApi,
                             navController = navController,
                             id = it.toRoute<QuestionDetailsNav>().id
+                        )
+                    }
+
+                    composable<TicketDetailsNav> {
+                        TicketDetailsScreen(
+                            networkApi = networkApi,
+                            navController = navController,
+                            id = it.toRoute<TicketDetailsNav>().id
                         )
                     }
                 }
