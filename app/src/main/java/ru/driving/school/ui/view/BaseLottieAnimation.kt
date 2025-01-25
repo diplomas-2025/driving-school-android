@@ -7,7 +7,8 @@ import com.airbnb.lottie.compose.*
 import ru.driving.school.R
 
 enum class LottieAnimationType(@RawRes val resId: Int) {
-    CAR(R.raw.car)
+    CAR(R.raw.car),
+    Question(R.raw.question)
 }
 
 @Composable

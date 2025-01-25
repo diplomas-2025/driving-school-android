@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.ArrowBackIosNew
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -36,6 +37,8 @@ import androidx.navigation.NavController
 import ru.driving.school.data.network.NetworkApi
 import ru.driving.school.data.network.models.AnswerDto
 import ru.driving.school.data.network.models.QuestionDetailsDto
+import ru.driving.school.ui.view.BaseLottieAnimation
+import ru.driving.school.ui.view.LottieAnimationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,11 +58,13 @@ fun QuestionDetailsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {  },
+                title = {
+                    Text(text = "Вопрос")
+                },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.Filled.ArrowBack,
+                            imageVector = Icons.Outlined.ArrowBackIosNew,
                             contentDescription = "Back"
                         )
                     }
@@ -68,17 +73,30 @@ fun QuestionDetailsScreen(
         }
     ) { padding ->
         Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.Center
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            contentAlignment = Alignment.TopCenter
         ) {
-            question?.let {
-                QuestionDetailsContent(it, selectedAnswerId, answerStatus) { answerId ->
-                    if (answerStatus == null) {
-                        selectedAnswerId = answerId
-                        answerStatus = if (it.answers.firstOrNull { it.id == answerId }?.isCorrect == true) {
-                            AnswerStatus.Correct
-                        } else {
-                            AnswerStatus.Incorrect(it.answers.first { it.isCorrect }.text)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                BaseLottieAnimation(
+                    type = LottieAnimationType.Question,
+                    modifier = Modifier.size(250.dp)
+                )
+
+                question?.let {
+                    QuestionDetailsContent(it, selectedAnswerId, answerStatus) { answerId ->
+                        if (answerStatus == null) {
+                            selectedAnswerId = answerId
+                            answerStatus =
+                                if (it.answers.firstOrNull { it.id == answerId }?.isCorrect == true) {
+                                    AnswerStatus.Correct
+                                } else {
+                                    AnswerStatus.Incorrect(it.answers.first { it.isCorrect }.text)
+                                }
                         }
                     }
                 }
