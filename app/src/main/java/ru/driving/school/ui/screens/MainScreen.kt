@@ -41,8 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import ru.driving.school.R
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.User
+import ru.driving.school.data.network.models.UserStatistics
 import ru.driving.school.ui.nav.models.LoginNav
+import ru.driving.school.ui.nav.models.MainNav
 import ru.driving.school.ui.nav.models.QuestionsNav
 import ru.driving.school.ui.nav.models.ThemesNav
 import ru.driving.school.ui.nav.models.TicketsNav
@@ -58,21 +61,11 @@ private enum class MainScreenState(
     Questions("Вопросы")
 }
 
-data class UserStatistics(
-    val countThemes: Int = 0,
-    val countUseThemes: Int = 100,
-
-    val countTickets: Int = 0,
-    val countUseTickets: Int = 100,
-
-    val countQuestions: Int = 0,
-    val countUseQuestions: Int = 100,
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     networkApi: NetworkApi,
+    storage: UserStorage,
     navController: NavController
 ) {
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -80,7 +73,10 @@ fun MainScreen(
     var user by remember { mutableStateOf<User?>(null) }
 
     LaunchedEffect(Unit) {
-        user = User(email = "test@mail.ru")
+        storage.getAccessToken()?.let { token ->
+            user = networkApi.getInfo("Bearer $token")
+            userStatistics = networkApi.getProgress("Bearer $token")
+        }
     }
 
     Scaffold(
@@ -137,14 +133,14 @@ fun MainScreen(
                                 CircularIndicator(
                                     canvasSize = 100.dp,
                                     indicatorValue = when(state) {
-                                        MainScreenState.Themes -> userStatistics.countThemes
-                                        MainScreenState.Tickets -> userStatistics.countTickets
-                                        MainScreenState.Questions -> userStatistics.countQuestions
-                                    },
-                                    maxIndicatorValue = when(state) {
                                         MainScreenState.Themes -> userStatistics.countUseThemes
                                         MainScreenState.Tickets -> userStatistics.countUseTickets
                                         MainScreenState.Questions -> userStatistics.countUseQuestions
+                                    },
+                                    maxIndicatorValue = when(state) {
+                                        MainScreenState.Themes -> userStatistics.countThemes
+                                        MainScreenState.Tickets -> userStatistics.countTickets
+                                        MainScreenState.Questions -> userStatistics.countQuestions
                                     },
                                     backgroundIndicatorStrokeWidth = 40f,
                                     foregroundIndicatorStrokeWidth = 40f,
@@ -199,7 +195,7 @@ fun MainScreen(
                         Spacer(Modifier.height(5.dp))
 
                         Text(
-                            text = user?.email ?: "",
+                            text = user?.username ?: "",
                             fontSize = 22.sp,
                             modifier = Modifier.fillMaxWidth(),
                             textAlign = TextAlign.Center
@@ -214,7 +210,12 @@ fun MainScreen(
                                 .fillMaxWidth()
                                 .padding(5.dp)
                         ) {
-                            navController.navigate(LoginNav)
+                            storage.saveAccessToken(null)
+                            navController.navigate(LoginNav) {
+                                popUpTo(MainNav) {
+                                    inclusive = true
+                                }
+                            }
                         }
                     }
                 }

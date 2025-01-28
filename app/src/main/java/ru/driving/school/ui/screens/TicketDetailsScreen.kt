@@ -1,5 +1,6 @@
 package ru.driving.school.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,24 +27,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.TicketDetailDto
 
 @Composable
 fun TicketDetailsScreen(
     id: Int,
     networkApi: NetworkApi,
-    navController: NavController
+    navController: NavController,
+    storage: UserStorage
 ) {
-    var selectedAnswerId by remember { mutableStateOf<Int?>(null) }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
+    var selectedAnswerId by remember { mutableStateOf<Int?>(null) }
     var ticketDetailDto by remember { mutableStateOf<TicketDetailDto?>(null) }
     var currentQuestionIndex by remember { mutableIntStateOf(0) }
 
@@ -56,9 +64,7 @@ fun TicketDetailsScreen(
             QuestionsProgressBar(
                 ticketDetailDto = ticketDetailDto,
                 currentQuestionIndex = currentQuestionIndex,
-                onClick = {
-                    currentQuestionIndex = it
-                }
+                onClick = {}
             )
         }
     ) { padding ->
@@ -71,16 +77,28 @@ fun TicketDetailsScreen(
             Column {
                 ticketDetailDto?.questions?.getOrNull(currentQuestionIndex)?.let {
                     QuestionDetailsContent(it, selectedAnswerId, null) { answerId ->
-                        selectedAnswerId = answerId
+                        scope.launch {
+                            selectedAnswerId = answerId
+                            if (it.answers.firstOrNull { it.id == answerId }?.isCorrect == true) {
+                                networkApi.progressQuestion(it.id, "Bearer " + storage.getAccessToken())
+                                Toast.makeText(context, "Ответ записан", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(20.dp))
 
                 Button(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp),
                     onClick = {
-
+                        if ((ticketDetailDto?.questions?.size ?: 0) - 1 == currentQuestionIndex) {
+                            navController.navigateUp()
+                        } else {
+                            currentQuestionIndex++
+                        }
                     }
                 ) {
                     Text(text = "Продолжить")

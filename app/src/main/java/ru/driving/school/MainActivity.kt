@@ -13,6 +13,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.create
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.ui.nav.models.LoginNav
 import ru.driving.school.ui.nav.models.MainNav
 import ru.driving.school.ui.nav.models.QuestionDetailsNav
@@ -39,6 +40,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
+            val userStorage = remember { UserStorage(this) }
             val networkApi = remember {
                 Retrofit.Builder()
                     .baseUrl("https://spotdiff.ru/driving-school-api/")
@@ -50,45 +52,53 @@ class MainActivity : ComponentActivity() {
             DrivingschoolandroidTheme {
                 NavHost(
                     navController = navController,
-                    startDestination = MainNav
+                    startDestination = if (userStorage.getAccessToken() == null) LoginNav else MainNav
                 ) {
                     composable<SignUpNav> {
                         SignUpScreen(
-                            navController = navController
+                            navController = navController,
+                            networkApi = networkApi,
+                            storage = userStorage
                         )
                     }
 
                     composable<LoginNav> {
                         LoginScreen(
-                            navController = navController
+                            navController = navController,
+                            networkApi = networkApi,
+                            storage = userStorage
                         )
                     }
 
                     composable<TicketsNav> {
                         TicketsScreen(
                             networkApi = networkApi,
-                            navController = navController
+                            navController = navController,
+                            storage = userStorage
                         )
                     }
 
                     composable<QuestionsNav> {
                         QuestionsScreen(
                             networkApi = networkApi,
-                            navController = navController
+                            navController = navController,
+                            storage = userStorage
                         )
                     }
 
                     composable<ThemesNav> {
                         ThemesScreen(
                             networkApi = networkApi,
-                            navController = navController
+                            navController = navController,
+                            storage = userStorage
                         )
                     }
 
                     composable<MainNav> {
                         MainScreen(
                             networkApi = networkApi,
-                            navController = navController
+                            navController = navController,
+                            storage = userStorage
                         )
                     }
 
@@ -96,7 +106,8 @@ class MainActivity : ComponentActivity() {
                         ThemeDetailsScreen(
                             networkApi = networkApi,
                             navController = navController,
-                            id = it.toRoute<ThemeDetailsNav>().id
+                            id = it.toRoute<ThemeDetailsNav>().id,
+                            storage = userStorage
                         )
                     }
 
@@ -104,7 +115,8 @@ class MainActivity : ComponentActivity() {
                         QuestionDetailsScreen(
                             networkApi = networkApi,
                             navController = navController,
-                            id = it.toRoute<QuestionDetailsNav>().id
+                            id = it.toRoute<QuestionDetailsNav>().id,
+                            storage = userStorage
                         )
                     }
 
@@ -112,7 +124,8 @@ class MainActivity : ComponentActivity() {
                         TicketDetailsScreen(
                             networkApi = networkApi,
                             navController = navController,
-                            id = it.toRoute<TicketDetailsNav>().id
+                            id = it.toRoute<TicketDetailsNav>().id,
+                            storage = userStorage
                         )
                     }
                 }

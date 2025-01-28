@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -40,17 +39,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ru.driving.school.data.network.NetworkApi
-import ru.driving.school.data.network.models.QuestionDto
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.ThemeDto
 import ru.driving.school.data.network.models.ThemeState
-import ru.driving.school.data.network.models.TicketState
 import ru.driving.school.ui.nav.models.ThemeDetailsNav
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ThemesScreen(
     networkApi: NetworkApi,
-    navController: NavController
+    navController: NavController,
+    storage: UserStorage
 ) {
     val themes = remember { mutableStateListOf<ThemeDto>() }
     var isLoading by remember { mutableStateOf(true) }
@@ -61,7 +60,7 @@ fun ThemesScreen(
         isLoading = true
         try {
             themes.clear()
-            themes.addAll(networkApi.getThemes())
+            themes.addAll(networkApi.getThemes("Bearer " + storage.getAccessToken()))
             errorMessage = null
         } catch (e: Exception) {
             errorMessage = "Failed to load tickets: ${e.message}"
@@ -103,7 +102,7 @@ fun ThemesList(themes: List<ThemeDto>, navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(themes) { theme ->
-            ThemeCard(theme = theme, state = ThemeState.entries.random()) {
+            ThemeCard(theme = theme) {
                 navController.navigate(ThemeDetailsNav(id = theme.id))
             }
         }
@@ -111,10 +110,10 @@ fun ThemesList(themes: List<ThemeDto>, navController: NavController) {
 }
 
 @Composable
-fun ThemeCard(theme: ThemeDto, state: ThemeState, onClick: () -> Unit) {
+fun ThemeCard(theme: ThemeDto, onClick: () -> Unit) {
     // Определение цветов для разных состояний
-    val stateColors = when (state) {
-        ThemeState.TRIED -> MaterialTheme.colorScheme.secondary
+    val stateColors = when (theme.status) {
+        ThemeState.NOT_PASSED -> MaterialTheme.colorScheme.secondary
         ThemeState.RESOLVED -> MaterialTheme.colorScheme.primary
     }
 
@@ -137,8 +136,8 @@ fun ThemeCard(theme: ThemeDto, state: ThemeState, onClick: () -> Unit) {
         ) {
             // Иконка состояния
             Icon(
-                imageVector = when (state) {
-                    ThemeState.TRIED -> Icons.Filled.AccessAlarm
+                imageVector = when (theme.status) {
+                    ThemeState.NOT_PASSED -> Icons.Filled.AccessAlarm
                     ThemeState.RESOLVED -> Icons.Filled.CheckCircle
                 },
                 contentDescription = null,
@@ -168,8 +167,8 @@ fun ThemeCard(theme: ThemeDto, state: ThemeState, onClick: () -> Unit) {
 
                 // Дополнительная информация о статусе
                 Text(
-                    text = when (state) {
-                        ThemeState.TRIED -> "В процессе"
+                    text = when (theme.status) {
+                        ThemeState.NOT_PASSED -> "В процессе"
                         ThemeState.RESOLVED -> "Решено"
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -178,7 +177,7 @@ fun ThemeCard(theme: ThemeDto, state: ThemeState, onClick: () -> Unit) {
             }
 
             // Добавление статуса с цветом и иконкой
-            if (state == ThemeState.RESOLVED) {
+            if (theme.status == ThemeState.RESOLVED) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = "Resolved",

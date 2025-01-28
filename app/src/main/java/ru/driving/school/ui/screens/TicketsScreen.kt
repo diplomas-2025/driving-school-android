@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.TicketDto
 import ru.driving.school.data.network.models.TicketState
 import ru.driving.school.ui.nav.models.TicketDetailsNav
@@ -50,7 +51,8 @@ import ru.driving.school.ui.nav.models.TicketDetailsNav
 @Composable
 fun TicketsScreen(
     networkApi: NetworkApi,
-    navController: NavController
+    navController: NavController,
+    storage: UserStorage
 ) {
     var tickets by remember { mutableStateOf<List<TicketDto>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -60,7 +62,7 @@ fun TicketsScreen(
     LaunchedEffect(Unit) {
         isLoading = true
         try {
-            tickets = networkApi.getTickets()
+            tickets = networkApi.getTickets("Bearer " + storage.getAccessToken())
             errorMessage = null
         } catch (e: Exception) {
             errorMessage = "Failed to load tickets: ${e.message}"
@@ -102,7 +104,7 @@ fun TicketList(tickets: List<TicketDto>, navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(tickets) { ticket ->
-            TicketCard(ticket = ticket, state = TicketState.entries.random()) {
+            TicketCard(ticket = ticket) {
                 navController.navigate(TicketDetailsNav(id = ticket.id))
             }
         }
@@ -110,11 +112,10 @@ fun TicketList(tickets: List<TicketDto>, navController: NavController) {
 }
 
 @Composable
-fun TicketCard(ticket: TicketDto, state: TicketState, onClick: () -> Unit) {
+fun TicketCard(ticket: TicketDto, onClick: () -> Unit) {
     // Определение цветов для разных состояний
-    val stateColors = when (state) {
-        TicketState.NOT_PASSED -> MaterialTheme.colorScheme.error
-        TicketState.TRIED -> MaterialTheme.colorScheme.secondary
+    val stateColors = when (ticket.status) {
+        TicketState.NOT_PASSED -> MaterialTheme.colorScheme.secondary
         TicketState.RESOLVED -> MaterialTheme.colorScheme.primary
     }
 
@@ -137,9 +138,8 @@ fun TicketCard(ticket: TicketDto, state: TicketState, onClick: () -> Unit) {
         ) {
             // Иконка состояния
             Icon(
-                imageVector = when (state) {
-                    TicketState.NOT_PASSED -> Icons.Filled.Error
-                    TicketState.TRIED -> Icons.Filled.AccessAlarm
+                imageVector = when (ticket.status) {
+                    TicketState.NOT_PASSED -> Icons.Filled.AccessAlarm
                     TicketState.RESOLVED -> Icons.Filled.CheckCircle
                 },
                 contentDescription = null,
@@ -160,9 +160,8 @@ fun TicketCard(ticket: TicketDto, state: TicketState, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 // Дополнительная информация о статусе
                 Text(
-                    text = when (state) {
+                    text = when (ticket.status) {
                         TicketState.NOT_PASSED -> "Не прошел"
-                        TicketState.TRIED -> "Пробовал"
                         TicketState.RESOLVED -> "Решено"
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -171,7 +170,7 @@ fun TicketCard(ticket: TicketDto, state: TicketState, onClick: () -> Unit) {
             }
 
             // Добавление статуса с цветом и иконкой
-            if (state == TicketState.RESOLVED) {
+            if (ticket.status == TicketState.RESOLVED) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = "Resolved",

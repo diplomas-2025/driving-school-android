@@ -28,13 +28,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.AnswerDto
 import ru.driving.school.data.network.models.QuestionDetailsDto
 import ru.driving.school.ui.view.BaseLottieAnimation
@@ -46,7 +49,10 @@ fun QuestionDetailsScreen(
     id: Int,
     networkApi: NetworkApi,
     navController: NavController,
+    storage: UserStorage
 ) {
+    val scope = rememberCoroutineScope()
+
     var question by remember { mutableStateOf<QuestionDetailsDto?>(null) }
     var selectedAnswerId by remember { mutableStateOf<Int?>(null) }
     var answerStatus by remember { mutableStateOf<AnswerStatus?>(null) }
@@ -89,14 +95,20 @@ fun QuestionDetailsScreen(
 
                 question?.let {
                     QuestionDetailsContent(it, selectedAnswerId, answerStatus) { answerId ->
-                        if (answerStatus == null) {
-                            selectedAnswerId = answerId
-                            answerStatus =
-                                if (it.answers.firstOrNull { it.id == answerId }?.isCorrect == true) {
-                                    AnswerStatus.Correct
-                                } else {
-                                    AnswerStatus.Incorrect(it.answers.first { it.isCorrect }.text)
+                        scope.launch {
+                            if (answerStatus == null) {
+                                selectedAnswerId = answerId
+                                answerStatus =
+                                    if (it.answers.firstOrNull { it.id == answerId }?.isCorrect == true) {
+                                        AnswerStatus.Correct
+                                    } else {
+                                        AnswerStatus.Incorrect(it.answers.first { it.isCorrect }.text)
+                                    }
+
+                                if (answerStatus is AnswerStatus.Correct) {
+                                    networkApi.progressQuestion(id, "Bearer " + storage.getAccessToken())
                                 }
+                            }
                         }
                     }
                 }

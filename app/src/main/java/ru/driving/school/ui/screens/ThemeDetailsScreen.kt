@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessAlarm
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -37,6 +36,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.QuestionDto
 import ru.driving.school.data.network.models.QuestionState
 import ru.driving.school.data.network.models.ThemeState
@@ -50,6 +50,7 @@ fun ThemeDetailsScreen(
     id: Int,
     networkApi: NetworkApi,
     navController: NavController,
+    storage: UserStorage
 ) {
     var theme by remember { mutableStateOf<ThemeDto?>(null) }
     val tickets = remember { mutableStateListOf<TicketDto>() }
@@ -64,12 +65,12 @@ fun ThemeDetailsScreen(
     LaunchedEffect(Unit) {
         isLoading = true
         try {
-            theme = networkApi.getThemeById(id)
+            theme = networkApi.getThemeById(id, "Bearer " + storage.getAccessToken())
 
             tickets.clear()
             questions.clear()
-            tickets.addAll(networkApi.getTicketsByThemeId(id))
-            questions.addAll(networkApi.getQuestionsByThemeId(id))
+            tickets.addAll(networkApi.getTicketsByThemeId(id, "Bearer " + storage.getAccessToken()))
+            questions.addAll(networkApi.getQuestionsByThemeId(id, "Bearer " + storage.getAccessToken()))
 
             errorMessage = null
         } catch (e: Exception) {
@@ -85,8 +86,8 @@ fun ThemeDetailsScreen(
             LazyColumn(contentPadding = padding) {
                 item {
                     // Определение цвета для состояния
-                    val stateColors = when (theme?.state) {
-                        ThemeState.TRIED, null -> MaterialTheme.colorScheme.secondary
+                    val stateColors = when (theme?.status) {
+                        ThemeState.NOT_PASSED, null -> MaterialTheme.colorScheme.secondary
                         ThemeState.RESOLVED -> MaterialTheme.colorScheme.primary
                     }
 
@@ -129,8 +130,8 @@ fun ThemeDetailsScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = when (theme?.state) {
-                                        ThemeState.TRIED, null -> Icons.Filled.AccessAlarm
+                                    imageVector = when (theme?.status) {
+                                        ThemeState.NOT_PASSED, null -> Icons.Filled.AccessAlarm
                                         ThemeState.RESOLVED -> Icons.Filled.CheckCircle
                                     },
                                     contentDescription = null,
@@ -142,8 +143,8 @@ fun ThemeDetailsScreen(
 
                                 // Статус темы
                                 Text(
-                                    text = when (theme?.state) {
-                                        ThemeState.TRIED, null -> "В процессе"
+                                    text = when (theme?.status) {
+                                        ThemeState.NOT_PASSED, null -> "В процессе"
                                         ThemeState.RESOLVED -> "Решено"
                                     },
                                     style = MaterialTheme.typography.bodySmall,
@@ -191,8 +192,8 @@ fun ThemeDetailsScreen(
                         Box(
                             modifier = Modifier.padding(horizontal = 15.dp, vertical = 5.dp)
                         ) {
-                            TicketCard(ticket = ticket, state = TicketState.entries.random()) {
-                                navController.navigate(TicketDetailsNav(id = id))
+                            TicketCard(ticket = ticket) {
+                                navController.navigate(TicketDetailsNav(id = ticket.id))
                             }
                         }
                     }
@@ -200,7 +201,7 @@ fun ThemeDetailsScreen(
                         Box(
                             modifier = Modifier.padding(horizontal = 15.dp, vertical = 5.dp)
                         ) {
-                            QuestionCard(question = question, state = QuestionState.entries.random()) {
+                            QuestionCard(question = question) {
                                 navController.navigate(QuestionDetailsNav(question.id))
                             }
                         }

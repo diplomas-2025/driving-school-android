@@ -1,5 +1,6 @@
 package ru.driving.school.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,21 +28,46 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlinx.coroutines.launch
+import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
+import ru.driving.school.data.network.models.SignIn
+import ru.driving.school.data.network.models.SignUp
+import ru.driving.school.ui.nav.models.MainNav
 
 @Composable
-fun SignUpScreen(navController: NavController) {
+fun SignUpScreen(
+    navController: NavController,
+    storage: UserStorage,
+    networkApi: NetworkApi
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     SignUpScreen(
         onSignUp = { name, email, password ->
-
+            scope.launch {
+                try {
+                    val response = networkApi.signUp(SignUp(name, email, password))
+                    if (response.isSuccessful) {
+                        storage.saveAccessToken(response.body()!!.accessToken)
+                        navController.navigate(MainNav)
+                    }
+                }catch (_: Exception) {
+                    Toast.makeText(context, "Ошибка", Toast.LENGTH_SHORT).show()
+                }
+            }
         },
         onNavigateToLogin = {
             navController.navigateUp()

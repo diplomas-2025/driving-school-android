@@ -40,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import ru.driving.school.data.network.NetworkApi
+import ru.driving.school.data.network.UserStorage
 import ru.driving.school.data.network.models.QuestionDto
 import ru.driving.school.data.network.models.QuestionState
 import ru.driving.school.ui.nav.models.QuestionDetailsNav
@@ -48,7 +49,8 @@ import ru.driving.school.ui.nav.models.QuestionDetailsNav
 @Composable
 fun QuestionsScreen(
     networkApi: NetworkApi,
-    navController: NavController
+    navController: NavController,
+    storage: UserStorage
 ) {
     val questions = remember { mutableStateListOf<QuestionDto>() }
     var isLoading by remember { mutableStateOf(true) }
@@ -59,7 +61,7 @@ fun QuestionsScreen(
         isLoading = true
         try {
             questions.clear()
-            questions.addAll(networkApi.getQuestions())
+            questions.addAll(networkApi.getQuestions("Bearer " + storage.getAccessToken()))
             errorMessage = null
         } catch (e: Exception) {
             errorMessage = "Failed to load tickets: ${e.message}"
@@ -101,7 +103,7 @@ fun QuestionsList(questions: List<QuestionDto>, navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(questions) { question ->
-            QuestionCard(question = question, state = QuestionState.entries.random()) {
+            QuestionCard(question = question) {
                 navController.navigate(QuestionDetailsNav(question.id))
             }
         }
@@ -109,11 +111,10 @@ fun QuestionsList(questions: List<QuestionDto>, navController: NavController) {
 }
 
 @Composable
-fun QuestionCard(question: QuestionDto, state: QuestionState, onClick: () -> Unit) {
+fun QuestionCard(question: QuestionDto, onClick: () -> Unit) {
     // Определение цветов для разных состояний
-    val stateColors = when (state) {
-        QuestionState.NOT_PASSED -> MaterialTheme.colorScheme.error
-        QuestionState.TRIED -> MaterialTheme.colorScheme.secondary
+    val stateColors = when (question.status) {
+        QuestionState.NOT_PASSED -> MaterialTheme.colorScheme.secondary
         QuestionState.RESOLVED -> MaterialTheme.colorScheme.primary
     }
 
@@ -136,9 +137,8 @@ fun QuestionCard(question: QuestionDto, state: QuestionState, onClick: () -> Uni
         ) {
             // Иконка состояния
             Icon(
-                imageVector = when (state) {
-                    QuestionState.NOT_PASSED -> Icons.Filled.Error
-                    QuestionState.TRIED -> Icons.Filled.AccessAlarm
+                imageVector = when (question.status) {
+                    QuestionState.NOT_PASSED -> Icons.Filled.AccessAlarm
                     QuestionState.RESOLVED -> Icons.Filled.CheckCircle
                 },
                 contentDescription = null,
@@ -159,9 +159,8 @@ fun QuestionCard(question: QuestionDto, state: QuestionState, onClick: () -> Uni
                 Spacer(modifier = Modifier.height(4.dp))
                 // Дополнительная информация о статусе
                 Text(
-                    text = when (state) {
+                    text = when (question.status) {
                         QuestionState.NOT_PASSED -> "Не прошел"
-                        QuestionState.TRIED -> "Пробовал"
                         QuestionState.RESOLVED -> "Решено"
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -170,7 +169,7 @@ fun QuestionCard(question: QuestionDto, state: QuestionState, onClick: () -> Uni
             }
 
             // Добавление статуса с цветом и иконкой
-            if (state == QuestionState.RESOLVED) {
+            if (question.status == QuestionState.RESOLVED) {
                 Icon(
                     imageVector = Icons.Filled.CheckCircle,
                     contentDescription = "Resolved",
